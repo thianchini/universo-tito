@@ -1,0 +1,35 @@
+{
+  "name": "universo-tito",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Universo Tito — videos educativos animados para niños de 3 a 6 años (Remotion).",
+  "type": "module",
+  "scripts": {
+    "dev": "remotion studio",
+    "build": "remotion bundle",
+    "render:intro": "remotion render TitoPresentacion out/tito-presentacion.mp4",
+    "render:still": "remotion still TitoPresentacion out/tito-still.png --frame=250",
+    "render:ficha": "remotion still FichaTito out/ficha-tito.png",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "check": "npm run typecheck && npm run lint"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.538",
+    "@remotion/fonts": "4.0.538",
+    "@remotion/media": "4.0.538",
+    "@remotion/studio": "4.0.538",
+    "@remotion/transitions": "4.0.538",
+    "react": "19.2.9",
+    "react-dom": "19.2.9",
+    "remotion": "4.0.538"
+  },
+  "devDependencies": {
+    "@fontsource/fredoka": "5.2.8",
+    "@remotion/eslint-config-flat": "4.0.538",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.3",
+    "eslint": "10.14.0",
+    "typescript": "5.9.3"
+  }
+}
