@@ -30,6 +30,14 @@ export const TITO_COLORS = {
   outline: "#5A2C12",
 } as const;
 
+/**
+ * Versión del diseño del personaje.
+ * v1: diseño inicial.
+ * v2: hocico con volumen, cola más grande con mechones, brazos con codo,
+ *     bufanda más grande con nudo, expresiones feliz/curioso diferenciadas.
+ */
+export const TITO_DESIGN_VERSION = 2;
+
 /** Dimensiones del lienzo SVG del personaje (unidades internas). */
 export const TITO_VIEWBOX = { width: 600, height: 820 } as const;
 
