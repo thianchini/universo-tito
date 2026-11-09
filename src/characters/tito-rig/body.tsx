@@ -76,6 +76,33 @@ const spineShape = (sk: Skeleton, table: ReadonlyArray<readonly [number, number]
   return smoothPath(pts, true);
 };
 
+/**
+ * Contorno de una forma que sigue a la columna con anchos distintos a cada lado
+ * (para vistas giradas: el lado que se aleja se ve más angosto).
+ */
+export const spineOutline = (
+  sk: Skeleton,
+  which: "torso" | "belly",
+  opts: { scaleL: number; scaleR: number; shift?: number },
+): string => {
+  const table = which === "torso" ? TORSO : BELLY;
+  const u0 = table[0][0];
+  const u1 = table[table.length - 1][0];
+  const steps = 34;
+  const right: Vec[] = [];
+  const left: Vec[] = [];
+  for (let i = 0; i <= steps; i++) {
+    const u = u0 + ((u1 - u0) * (1 - Math.cos((Math.PI * i) / steps))) / 2;
+    const { p, t } = spineAt(sk, u);
+    const hw = profile(table, u);
+    const n = perpRight(t);
+    const c = add(p, mul(n, opts.shift ?? 0));
+    right.push(add(c, mul(n, hw * opts.scaleR)));
+    left.push(add(c, mul(n, -hw * opts.scaleL)));
+  }
+  return smoothPath([...right.slice(0, -1), ...left.reverse().slice(0, -1)], true);
+};
+
 export const Torso: React.FC<{ sk: Skeleton; uid: string }> = ({ sk, uid }) => (
   <g>
     <path d={spineShape(sk, TORSO, 0.035)} fill={`url(#${uid}-fur)`} stroke={C.outline} strokeWidth={OUTLINE} strokeLinejoin="round" />
@@ -138,19 +165,21 @@ const Hand: React.FC<{ at: Vec; angle: number; side: "L" | "R" }> = ({ at, angle
 
 // ── Piernas ──────────────────────────────────────────────────────────
 
-export const Leg: React.FC<{ leg: LegPose; side: "L" | "R" }> = ({ leg, side }) => {
+export const Leg: React.FC<{ leg: LegPose; side: "L" | "R"; footForward?: number; shade?: boolean }> = ({ leg, side, footForward = 0, shade = false }) => {
   const center = sampleSpline([leg.hip, leg.knee, leg.ankle], 6);
   const { right, left } = tubeSides(center, (_, t) => mix(31, 28, t));
   const fill = smoothPath([...right, ...left.slice().reverse()], true);
   const out = side === "L" ? -1 : 1;
-  const foot = add(leg.ankle, { x: 3 * out, y: 7 });
+  const foot = add(leg.ankle, { x: footForward ? footForward : 3 * out, y: 7 });
   return (
     <g>
       <path d={fill} fill={C.paws} stroke={C.outline} strokeWidth={OUTLINE} strokeLinejoin="round" />
-      <g transform={`translate(${foot.x.toFixed(2)} ${foot.y.toFixed(2)}) rotate(${(leg.footAngle * out).toFixed(2)})`}>
+      <g transform={`translate(${foot.x.toFixed(2)} ${foot.y.toFixed(2)}) rotate(${(leg.footAngle * out).toFixed(2)})`} opacity={1}>
         <path d="M -38 4 C -38 -14 -24 -20 0 -20 C 24 -20 38 -14 38 4 C 38 16 26 18 0 18 C -26 18 -38 16 -38 4 Z" fill={C.paws} stroke={C.outline} strokeWidth={OUTLINE} />
         <path d="M -14 8 L -14 16 M 0 8 L 0 17 M 14 8 L 14 16" stroke="#4A2612" strokeWidth={4} strokeLinecap="round" opacity={0.8} />
       </g>
+      {/* La pierna lejana va un poco más oscura (profundidad) */}
+      {shade && <path d={fill} fill="#000" opacity={0.18} />}
     </g>
   );
 };

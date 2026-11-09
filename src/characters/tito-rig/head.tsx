@@ -23,6 +23,8 @@ type EyeProps = {
   pupil: number;
   /** Lado de la cara (para que los párpados se inclinen hacia afuera). */
   side: -1 | 1;
+  /** Ancho del ojo (48 de frente; menor cuando la cabeza gira: escorzo). */
+  rx?: number;
 };
 
 /**
@@ -30,8 +32,7 @@ type EyeProps = {
  * inferior sube con la sonrisa. Cerrado con el inferior arriba forma el "^"
  * de felicidad; cerrado sin él, una línea relajada.
  */
-const Eye: React.FC<EyeProps> = ({ id, skin, cx, cy, open, lower, lookX, lookY, pupil, side }) => {
-  const rx = 48;
+export const Eye: React.FC<EyeProps> = ({ id, skin, cx, cy, open, lower, lookX, lookY, pupil, side, rx = 48 }) => {
   const wideness = Math.max(0, open - 1);
   const ry = 56 + wideness * 26;
   const o = clamp(open, 0, 1);
@@ -58,7 +59,9 @@ const Eye: React.FC<EyeProps> = ({ id, skin, cx, cy, open, lower, lookX, lookY, 
   const lowerLine = `M ${f(cx - rx - 8)} ${f(lowY + 6)} Q ${f(cx)} ${f(lowY - lift)} ${f(cx + rx + 8)} ${f(lowY + 6)}`;
   const lowerFill = `${lowerLine} L ${f(cx + rx + 8)} ${f(bottom + 20)} L ${f(cx - rx - 8)} ${f(bottom + 20)} Z`;
 
-  const px = cx + lookX * 14;
+  // Con el ojo escorzado el iris también se angosta.
+  const squeeze = rx / 48;
+  const px = cx + lookX * 14 * squeeze;
   const py = cy + 4 + lookY * 13;
   const irisR = 36 - wideness * 6;
   const pupilR = 19 * pupil * (1 - wideness * 0.3);
@@ -75,10 +78,10 @@ const Eye: React.FC<EyeProps> = ({ id, skin, cx, cy, open, lower, lookX, lookY, 
       </defs>
       {o > 0.06 && <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill={C.eyeWhite} />}
       <g clipPath={`url(#${clipId})`}>
-        {o > 0.06 && <circle cx={px} cy={py} r={irisR} fill={`url(#${id.replace(/-[lr]$/, "")}-iris)`} />}
+        {o > 0.06 && <ellipse cx={px} cy={py} rx={irisR * squeeze} ry={irisR} fill={`url(#${id.replace(/-[lr]$/, "")}-iris)`} />}
         {o > 0.06 && (
           <>
-            <circle cx={px} cy={py + 2} r={pupilR} fill={C.pupil} />
+            <ellipse cx={px} cy={py + 2} rx={pupilR * squeeze} ry={pupilR} fill={C.pupil} />
             <circle cx={px + 12} cy={py - 14} r={10} fill="#FFFFFF" />
             <circle cx={px - 11} cy={py + 13} r={5} fill="#FFFFFF" opacity={0.85} />
           </>
@@ -103,7 +106,7 @@ const Eye: React.FC<EyeProps> = ({ id, skin, cx, cy, open, lower, lookX, lookY, 
 
 // ── CEJA ─────────────────────────────────────────────────────────────
 
-const Brow: React.FC<{ cx: number; y: number; tilt: number; side: -1 | 1; arch: number }> = ({ cx, y, tilt, side, arch }) => {
+export const Brow: React.FC<{ cx: number; y: number; tilt: number; side: -1 | 1; arch: number }> = ({ cx, y, tilt, side, arch }) => {
   // side -1 = ceja izquierda (su extremo interior está a la derecha).
   const inner = { x: cx - 33 * side, y: y - tilt * 20 };
   const outer = { x: cx + 33 * side, y: y + tilt * 6 };
