@@ -88,6 +88,35 @@ Después de agregar audios, reiniciá Studio o volvé a renderizar.
 3. Definí `compositionId`, título, objetivo pedagógico y escenas (con transiciones `fade`, `slide`, `wipe`, `clockWipe`).
 4. Agregalo a `src/episodes/registry.ts`. Aparece solo en Studio.
 
+## Sistema de animación v3 (rig deformable) — en laboratorio
+
+Nuevo sistema construido en paralelo (el episodio 0 todavía usa el Tito anterior):
+
+```
+src/rig/                     Motor genérico
+├── math.ts, matrix.ts       Matemática 2D, ruido orgánico
+├── curves.ts                Curvas suaves, tubos, contornos con mechones
+├── ik.ts                    Cinemática inversa de dos huesos (piernas)
+├── physics.ts               Cadenas con resortes angulares (cola, bufanda), deterministas y en caché
+├── spring.ts                Resorte amortiguado (orejas)
+└── tracks.ts                Poses clave con interpolación cúbica monótona
+src/characters/tito-rig/     Tito v3
+├── channels.ts              Todos los canales animables y la pose de reposo
+├── skeleton.ts              Esqueleto: columna curva, brazos, piernas (IK), cabeza
+├── body.tsx / head.tsx      Dibujo deformable (torso, tubos, cola, bufanda, cara con párpados)
+├── face.ts                  Expresiones graduales, parpadeo, microsacadas, habla por sílabas
+├── secondary.ts             Física secundaria de cola, orejas y bufanda
+├── performance.ts           Capas: poses clave + reposo vivo + salto + saludo + habla + mirada
+└── TitoRig.tsx              Componente final (opción showBones para ver el esqueleto)
+src/lab/                     Demo y hojas de prueba (carpeta "Laboratorio" en Studio)
+```
+
+| Comando | Qué hace |
+|---|---|
+| `npm run render:demo` | Demo de 10 s → `out/tito-demo-animacion.mp4` |
+| `npm run render:demo-huesos` | La misma demo mostrando el esqueleto encima |
+| `npm run test:animacion` | Detector automático de tirones en la animación |
+
 ## Reglas de consistencia de Tito
 
 - Nunca cambiar `src/characters/tito/design.ts` dentro de un episodio.

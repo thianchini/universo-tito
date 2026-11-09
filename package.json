@@ -12,7 +12,10 @@
     "render:ficha": "remotion still FichaTito out/ficha-tito.png",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
-    "check": "npm run typecheck && npm run lint"
+    "check": "npm run typecheck && npm run lint",
+    "render:demo": "remotion render TitoDemoAnimacion out/tito-demo-animacion.mp4",
+    "render:demo-huesos": "remotion render TitoDemoAnimacion out/tito-demo-huesos.mp4 --props={\\\"showBones\\\":true}",
+    "test:animacion": "esbuild scripts/smoothness-report.ts --bundle --platform=node --outfile=out/smoothness.cjs --log-level=error && node out/smoothness.cjs"
   },
   "dependencies": {
     "@remotion/cli": "4.0.538",
