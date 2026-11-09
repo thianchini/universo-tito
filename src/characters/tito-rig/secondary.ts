@@ -16,16 +16,16 @@ const TAIL_PARAMS = {
   shape: TAIL,
   // Base firme (la sostiene la cadera), punta suelta y liviana.
   periods: [11, 13, 15, 16, 17, 18, 19],
-  damping: 0.5,
+  damping: 0.56,
   gravity: 0.06,
-  inertia: 0.7,
+  inertia: 0.62,
   maxDeviation: 28,
   substeps: 4,
 };
 const SCARF_PARAMS = {
   shape: SCARF,
   periods: [16, 18, 20, 22],
-  damping: 0.32,
+  damping: 0.38,
   gravity: 0.5,
   inertia: 1,
   maxDeviation: 24,
@@ -37,8 +37,8 @@ const SCARF_PARAMS = {
  * - aceleración vertical (se abren al despegar/aterrizar, flotan en el aire),
  * - giros de la cabeza (llegan tarde y se pasan).
  */
-const EAR_PERIOD = 10;
-const EAR_DAMPING = 0.3;
+const EAR_PERIOD = 11;
+const EAR_DAMPING = 0.4;
 const EAR_HORIZONTAL = 0.9; // grados por unidad de aceleración
 const EAR_VERTICAL = 2.6;
 const EAR_TURN = 0.9;

@@ -105,6 +105,8 @@ const KEYS: ActKey[] = [
   { f: L + 15, hipsY: 4, stretch: 0.97, headStretch: 0.99, headY: 1, armLShoulder: 4, armRShoulder: 4 },
   { f: L + 22, hipsY: 0, stretch: 1, headStretch: 1, headY: 0, armLShoulder: 0, armRShoulder: 0, armLElbow: 8, armRElbow: 8 },
   { f: L + 4, headYaw: 0.08 },
+  { f: L + 6, earL: 4, earR: 4 },
+  { f: L + 24, earL: 0, earR: 0 },
   { f: L + 14, headYaw: 0 },
 
   // ── Mira a cámara: ojos (182→186) y después cabeza ──
@@ -119,9 +121,10 @@ const KEYS: ActKey[] = [
 
   // ── Saludo: anticipación hacia abajo, sube con overshoot, saluda ──
   { f: 200, armRShoulder: 0, armRElbow: 8, armRWrist: 0, lean: 0, hipsX: 0, wave: 0 },
-  { f: 204, armRShoulder: -8, armRElbow: 22 },
-  { f: 211, armRShoulder: 104, armRElbow: -66 },
-  { f: 216, armRShoulder: 94, armRElbow: -58, lean: -3.5, hipsX: 7, wave: 1 },
+  { f: 204, armRShoulder: -7, armRElbow: 20 },
+  { f: 209, armRShoulder: 70, armRElbow: -30 },
+  { f: 213, armRShoulder: 102, armRElbow: -64 },
+  { f: 218, armRShoulder: 94, armRElbow: -58, lean: -3.5, hipsX: 7, wave: 1 },
   { f: 208, wave: 0 },
   { f: 258, wave: 1, armRShoulder: 94, armRElbow: -58 },
   { f: 264, wave: 0, armRShoulder: 90, armRElbow: -54 },
@@ -152,5 +155,10 @@ export const createDemoPerformance = () =>
       [280, 300],
     ],
     lookAt: butterflyAt,
+    earFlicks: [
+      { f: 24, side: "L", amount: -9 },
+      { f: 92, side: "R", amount: -7 },
+      { f: 246, side: "L", amount: -6 },
+    ],
     seed: 2,
   });

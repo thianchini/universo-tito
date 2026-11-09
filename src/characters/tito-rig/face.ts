@@ -82,10 +82,17 @@ export const blinkAt = (frame: number, schedule: number[]): number =>
  * mirada que se sostienen y cambian rápido (2 frames), como en las personas.
  */
 export const microSaccade = (frame: number, seed = 0): { x: number; y: number } => {
-  const holdLen = 26;
-  const idx = Math.floor(frame / holdLen);
-  const local = frame - idx * holdLen;
-  const target = (k: number) => ({ x: noise1(k * 1.37, seed + 11) * 0.09, y: noise1(k * 2.11, seed + 23) * 0.06 });
+  // Intervalos irregulares (18–40 frames) entre saltitos de mirada.
+  let start = 0;
+  let idx = 0;
+  for (;;) {
+    const len = 18 + Math.round(Math.abs(noise1(idx * 0.91 + 3, seed + 31)) * 22);
+    if (frame < start + len) break;
+    start += len;
+    idx++;
+  }
+  const local = frame - start;
+  const target = (k: number) => ({ x: noise1(k * 1.37, seed + 11) * 0.08, y: noise1(k * 2.11, seed + 23) * 0.05 });
   const a = target(idx - 1);
   const b = target(idx);
   const t = smoothstep(local / 2.5);

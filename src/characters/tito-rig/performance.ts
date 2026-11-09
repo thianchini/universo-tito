@@ -1,4 +1,6 @@
-import { clamp, mix, Vec } from "../../rig/math";
+import { clamp, mix, smoothstep, Vec } from "../../rig/math";
+import { cachedSimulation } from "../../rig/physics";
+import { Spring1D } from "../../rig/spring";
 import { apply } from "../../rig/matrix";
 import { accumulatedPhase, createTrack, Key } from "../../rig/tracks";
 import { CHANNEL_NAMES, REST, TitoChannels } from "./channels";
@@ -25,6 +27,9 @@ export type ActKey = { f: number; stop?: boolean; expr?: ExpressionName } & Part
 
 export type Jump = { takeoff: number; land: number; height: number; dx?: number };
 
+/** Tic de oreja: un movimiento corto con intención (como hacen los animales). */
+export type EarFlick = { f: number; side: "L" | "R" | "both"; amount?: number };
+
 export type PerformanceSpec = {
   duration: number;
   keys: ActKey[];
@@ -34,6 +39,8 @@ export type PerformanceSpec = {
   blinks?: number[];
   /** Tramos sin parpadeos automáticos (p. ej. ojos cerrados o en pleno salto). */
   noAutoBlink?: Array<[number, number]>;
+  /** Tics de orejas puntuales (en lugar de un temblor continuo). */
+  earFlicks?: EarFlick[];
   /** Objetivo de la mirada en coordenadas del rig (si hay). */
   lookAt?: (frame: number) => Vec;
   seed?: number;
@@ -66,10 +73,13 @@ export const createPerformance = (spec: PerformanceSpec): Performance => {
   const track = createTrack([{ f: 0, ...CONTROLS } as Key, ...expandKeys(spec.keys)]);
   const blinks = blinkSchedule(spec.duration, spec.blinks ?? [], seed, spec.noAutoBlink ?? []);
   const ctrlAt = (f: number) => ({ ...CONTROLS, ...track(f) });
-  const wagPhase = accumulatedPhase(spec.duration, (f) => ctrlAt(f).wagPeriod);
+  // El meneo de cola y la respiración varían levemente de ritmo: no son metrónomos.
+  const wagPhase = accumulatedPhase(spec.duration, (f) => ctrlAt(f).wagPeriod * (1 + organic(f, 90, seed + 21) * 0.12));
+  const breathPhase = accumulatedPhase(spec.duration, (f) => 98 * (1 + organic(f, 160, seed + 22) * 0.1));
+  const phaseAt = (arr: number[], f: number) => arr[Math.max(0, Math.min(arr.length - 1, Math.floor(f)))] ?? 0;
   const WAVE_PERIOD = 15;
 
-  const channelsAt = (frame: number): TitoChannels => {
+  const baseAt = (frame: number): TitoChannels => {
     const f = frame;
     const k = track(f);
     const ctl = ctrlAt(f);
@@ -79,21 +89,33 @@ export const createPerformance = (spec: PerformanceSpec): Performance => {
     // 2) Reposo vivo
     const w = clamp(ctl.idle, 0, 1);
     if (w > 0) {
-      const br = (Math.sin((2 * Math.PI * f) / 96) + 1) / 2;
+      const bph = phaseAt(breathPhase, f);
+      const br = (Math.sin(bph) + 1) / 2;
       c.breath += br * w;
-      const shift = organic(f, 150, seed + 1);
-      c.hipsX += shift * 7 * w;
-      c.lean += (-shift * 1.4 + organic(f, 95, seed + 4) * 0.7) * w;
-      c.headRot += organic(f, 85, seed + 3) * 2.4 * w;
-      c.headY += Math.sin((2 * Math.PI * f) / 96 - 0.9) * 1.6 * w;
+      const shift = organic(f, 160, seed + 1);
+      c.hipsX += shift * 5 * w;
+      c.lean += (-shift * 1.1 + organic(f, 110, seed + 4) * 0.5) * w;
+      c.headRot += organic(f, 95, seed + 3) * 1.8 * w;
+      c.headY += Math.sin(bph - 0.9) * 1.4 * w;
       c.armLShoulder += (br * 1.6 + organic(f, 70, seed + 6) * 1.5) * w;
       c.armRShoulder += (br * 1.6 + organic(f, 75, seed + 7) * 1.5) * w;
       c.armLElbow += organic(f, 60, seed + 8) * 3 * w;
       c.armRElbow += organic(f, 64, seed + 9) * 3 * w;
-      c.earL += organic(f, 55, seed + 10) * 2 * w;
-      c.earR += organic(f, 58, seed + 11) * 2 * w;
     }
-    c.tailWag += Math.sin(wagPhase[Math.max(0, Math.floor(f))] ?? 0) * ctl.wagAmt;
+
+    // Cola: amplitud que respira (a veces casi se detiene)
+    const wagMod = 0.72 + 0.28 * organic(f, 130, seed + 23);
+    c.tailWag += Math.sin(phaseAt(wagPhase, f)) * ctl.wagAmt * wagMod;
+
+    // Tics de orejas: salida rápida (3 frames), vuelta suave (12 frames)
+    for (const e of spec.earFlicks ?? []) {
+      const t = f - e.f;
+      if (t < 0 || t > 16) continue;
+      const shape = t < 3 ? smoothstep(t / 3) : 1 - smoothstep((t - 3) / 12);
+      const a = (e.amount ?? -10) * shape;
+      if (e.side !== "R") c.earL += a;
+      if (e.side !== "L") c.earR += a;
+    }
 
     // 3) Saltos: parábola de gravedad constante
     for (const j of spec.jumps ?? []) {
@@ -141,6 +163,61 @@ export const createPerformance = (spec: PerformanceSpec): Performance => {
     c.lookX += ms.x * (1 - lt);
     c.lookY += ms.y * (1 - lt);
     c.blink = Math.max(c.blink, blinkAt(f, blinks));
+    return c;
+  };
+
+  /**
+   * 7) ARRASTRE (overlapping action): la cabeza, los brazos y las manos tienen
+   * peso propio. Resortes suaves que reaccionan a la aceleración del cuello y a
+   * los giros del pecho/codos; llegan un poco tarde y se asientan sin rebotar.
+   */
+  const headY = new Spring1D(10, 0.85);
+  const headRot = new Spring1D(11, 0.55);
+  const armL = new Spring1D(11, 0.55);
+  const armR = new Spring1D(11, 0.55);
+  const wristL = new Spring1D(7, 0.5);
+  const wristR = new Spring1D(7, 0.5);
+  const hist: Array<{ neck: { x: number; y: number }; chest: number; elL: number; elR: number }> = [];
+  // Límite suave: se acerca al máximo sin quiebres (un límite duro produce tirones).
+  const lim = (v: number, m: number) => m * Math.tanh(v / m);
+  const overlapAt = cachedSimulation((f) => {
+    const b = baseAt(f);
+    const sk = solveSkeleton(b);
+    hist.push({ neck: sk.neck, chest: sk.chestAngle, elL: b.armLElbow + b.armLShoulder, elR: b.armRElbow + b.armRShoulder });
+    const n = hist.length;
+    // Aceleración suavizada (promedio de 3 frames): reacciona al peso, no a cada golpe.
+    const acc = (get: (h: (typeof hist)[number]) => number) => {
+      let sum = 0;
+      let cnt = 0;
+      for (let k = n - 1; k >= Math.max(2, n - 3); k--) {
+        sum += get(hist[k]) - 2 * get(hist[k - 1]) + get(hist[k - 2]);
+        cnt++;
+      }
+      return cnt ? sum / cnt : 0;
+    };
+    const ax = acc((h) => h.neck.x);
+    const ay = acc((h) => h.neck.y);
+    const aChest = acc((h) => h.chest);
+    return {
+      // si el cuello acelera hacia arriba (ay < 0), la cabeza se queda abajo (+y)
+      headY: lim(headY.step(0, -ay * 0.2), 4.5),
+      headRot: lim(headRot.step(0, -ax * 0.2 - aChest * 0.45), 3.5),
+      armL: lim(armL.step(0, ay * 0.2), 6),
+      armR: lim(armR.step(0, ay * 0.2), 6),
+      wristL: lim(wristL.step(0, -acc((h) => h.elL) * 0.5), 10),
+      wristR: lim(wristR.step(0, -acc((h) => h.elR) * 0.5), 10),
+    };
+  });
+
+  const channelsAt = (frame: number): TitoChannels => {
+    const c = baseAt(frame);
+    const o = overlapAt(frame);
+    c.headY += o.headY;
+    c.headRot += o.headRot;
+    c.armLShoulder += o.armL;
+    c.armRShoulder += o.armR;
+    c.armLWrist += o.wristL;
+    c.armRWrist += o.wristR;
     return c;
   };
 
