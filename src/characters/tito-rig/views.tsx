@@ -12,6 +12,10 @@ import { solveSkeleton } from "./skeleton";
  * Mismo lienzo (600×820, pies en y=790), mismas alturas de referencia
  * (orejas, ojos, mentón, panza, pies), mismos colores y piezas que el frente.
  * Para mirar a la izquierda se usan en espejo.
+ *
+ * REFERENCIA OFICIAL: docs/referencias/tito-giro-oficial.png (ficha "TitoGiro").
+ * Cualquier cambio en estas vistas debe mantener la coherencia descrita en
+ * docs/referencias/README.md.
  */
 
 const OUTLINE = 5;
@@ -188,9 +192,10 @@ const HeadProfile: React.FC<{ uid: string }> = ({ uid }) => {
 
       {/* Crema: mejilla y parte de abajo del hocico */}
       <path
-        d="M 150 398 C 196 372 262 366 312 374 C 382 386 440 384 504 398
+        d="M 146 394 C 186 352 258 336 314 350 C 360 362 414 380 470 386
+           C 488 389 498 393 504 398
            C 490 410 456 416 428 428 C 398 442 360 458 302 466
-           C 252 468 196 460 160 432 C 154 420 152 410 150 398 Z"
+           C 252 468 196 460 160 432 C 152 420 148 408 146 394 Z"
         fill={C.cream}
       />
       {/* Puente del hocico */}
@@ -209,15 +214,15 @@ const HeadProfile: React.FC<{ uid: string }> = ({ uid }) => {
       <Eye id={`${uid}-l`} skin={skin} cx={348} cy={284} open={1} lower={0.12} lookX={0.75} lookY={0} pupil={1} side={1} rx={40} />
 
       {/* Cachete */}
-      <ellipse cx={300} cy={386} rx={30} ry={17} fill={C.blush} opacity={0.55} />
+      <ellipse cx={302} cy={378} rx={30} ry={17} fill={C.blush} opacity={0.55} />
 
       {/* Nariz en la punta */}
       <path d="M 498 360 Q 526 350 536 370 Q 532 390 514 394 Q 496 386 498 360 Z" fill={C.nose} />
       <ellipse cx={514} cy={364} rx={8} ry={4.5} fill="#FFFFFF" opacity={0.7} />
       {/* Boca */}
       <path d="M 514 394 Q 510 402 500 406" stroke={C.outline} strokeWidth={6} strokeLinecap="round" fill="none" />
-      <path d="M 438 410 Q 468 432 502 406" stroke={C.outline} strokeWidth={7} strokeLinecap="round" fill="none" />
-      <path d="M 432 403 Q 435 410 441 412" stroke={C.outline} strokeWidth={5} strokeLinecap="round" fill="none" />
+      <path d="M 430 408 Q 466 438 502 406" stroke={C.outline} strokeWidth={7} strokeLinecap="round" fill="none" />
+      <path d="M 423 400 Q 426 408 433 410" stroke={C.outline} strokeWidth={5} strokeLinecap="round" fill="none" />
     </g>
   );
 };
@@ -225,11 +230,19 @@ const HeadProfile: React.FC<{ uid: string }> = ({ uid }) => {
 /** Banda de la bufanda vista de costado (más baja adelante) con el nudo al frente. */
 const ScarfBandProfile: React.FC = () => (
   <g>
-    <path d="M 196 448 C 252 470 326 480 396 474 L 402 516 C 330 526 252 512 192 486 Z" fill={C.scarf} stroke={C.outline} strokeWidth={OUTLINE} strokeLinejoin="round" />
-    {[216, 240, 264, 288, 312, 336, 360, 384].map((x, i) => (
-      <path key={x} d={`M ${x} ${458 + i * 2.2} L ${x} ${494 + i * 2.6}`} stroke={C.scarfShade} strokeWidth={4} strokeLinecap="round" opacity={0.45} />
+    <path
+      d="M 214 446 C 262 468 330 480 396 474 L 402 516 C 330 526 258 514 214 494 C 196 486 192 456 214 446 Z"
+      fill={C.scarf}
+      stroke={C.outline}
+      strokeWidth={OUTLINE}
+      strokeLinejoin="round"
+    />
+    {/* La parte que gira por detrás del cuello queda en sombra */}
+    <path d="M 214 449 C 199 458 199 484 214 491 C 224 494 232 497 240 500 C 234 482 234 462 240 458 C 230 455 222 452 214 449 Z" fill={C.scarfShade} opacity={0.55} />
+    {[240, 264, 288, 312, 336, 360, 384].map((x, i) => (
+      <path key={x} d={`M ${x} ${461 + i * 2.2} L ${x} ${497 + i * 2.6}`} stroke={C.scarfShade} strokeWidth={4} strokeLinecap="round" opacity={0.45} />
     ))}
-    <path d="M 196 468 C 252 490 326 500 398 495" stroke={C.scarfStripe} strokeWidth={10} fill="none" strokeLinecap="round" />
+    <path d="M 216 470 C 262 490 326 500 398 495" stroke={C.scarfStripe} strokeWidth={10} fill="none" strokeLinecap="round" />
   </g>
 );
 

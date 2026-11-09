@@ -119,6 +119,9 @@ src/lab/                     Demo y hojas de prueba (carpeta "Laboratorio" en St
 
 ## Reglas de consistencia de Tito
 
+- Referencia oficial de las tres vistas (frente, tres cuartos, perfil): `docs/referencias/tito-giro-oficial.png`
+  y sus reglas en `docs/referencias/README.md`.
+
 - Nunca cambiar `src/characters/tito/design.ts` dentro de un episodio.
 - Las expresiones disponibles son `feliz`, `sorpresa`, `curioso`, `guino`; nuevas expresiones o accesorios se agregan como props de `<Tito/>`.
 - Revisar la ficha (`npm run render:ficha`) antes de aprobar cambios en el personaje.
